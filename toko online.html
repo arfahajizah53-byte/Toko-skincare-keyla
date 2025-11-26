@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Arpah — Toko Aksesories</title>
+  <style>
+    :root{--bg:#f7f7fb;--card:#ffffff;--accent:#6b21a8;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial; margin:0;background:var(--bg);color:#0f172a}
+    header{background:linear-gradient(90deg,#7c3aed22,transparent);padding:18px 20px;display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#a78bfa,#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+    h1{margin:0;font-size:18px}
+    .search{min-width:220px}
+    .container{max-width:1100px;margin:20px auto;padding:0 16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);display:flex;flex-direction:column;gap:10px}
+    .img{height:160px;background:#eef2ff;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    .img img{width:100%;height:100%;object-fit:cover}
+    .price{font-weight:700}
+    .muted{color:var(--muted);font-size:13px}
+    .btn{background:var(--accent);color:white;padding:8px 12px;border-radius:8px;border:0;cursor:pointer}
+    .btn.secondary{background:transparent;color:var(--accent);border:1px solid #efe6ff}
+    .topbar{display:flex;gap:8px;align-items:center}
+    .cart-btn{position:relative}
+    .badge{position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;border-radius:999px;padding:4px 7px;font-size:12px}
+    .cart-drawer{position:fixed;right:20px;top:80px;width:340px;max-height:70vh;background:var(--card);border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.2);overflow:auto;padding:12px;display:none;flex-direction:column;gap:10px}
+    .cart-drawer.open{display:flex}
+    .cart-item{display:flex;gap:10px;align-items:center}
+    .cart-item .thumb{width:64px;height:64px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .cart-item .thumb img{width:100%;height:100%;object-fit:cover}
+    footer{padding:22px;text-align:center;color:var(--muted)}
+    @media(max-width:640px){.container{padding:0 12px}.cart-drawer{right:12px;left:12px;width:auto}}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.4);display:none;align-items:center;justify-content:center}
+    .modal-backdrop.show{display:flex}
+    .modal{background:var(--card);padding:18px;border-radius:12px;max-width:520px;width:100%}
+    .form-row{display:flex;gap:8px}
+    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #e6e9ef}
+    small{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">A</div>
+      <div>
+        <h1>Arpah</h1>
+        <div class="muted">Toko aksesories aesthetic — kalung, gelang, bros, &amp; more</div>
+      </div>
+    </div>
+    <div class="topbar">
+      <input id="search" class="search" placeholder="Cari produk..." />
+      <button class="btn secondary" id="clearStorage">Reset</button>
+      <button class="btn cart-btn" id="openCart">Keranjang <span id="count" class="badge" style="display:none">0</span></button>
+    </div>
+  </header>
+  <main class="container">
+    <section>
+      <h2 style="margin:0 0 12px 0">Produk Populer</h2>
+      <div id="productGrid" class="grid"></div>
+    </section>
+  </main>
+
+  <aside id="cartDrawer" class="cart-drawer" aria-hidden="true">
+    <h3>Keranjang</h3>
+    <div id="cartItems"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px dashed #eef2ff">
+      <div>
+        <div>Subtotal</div>
+        <div id="subtotal" style="font-weight:700">Rp0</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn secondary" id="closeCart">Tutup</button>
+        <button class="btn" id="checkoutBtn">Checkout</button>
+      </div>
+    </div>
+  </aside>
+
+  <div id="modal" class="modal-backdrop">
+    <div class="modal">
+      <h3>Checkout — Arpah</h3>
+      <div id="checkoutSummary" class="muted" style="margin-bottom:8px">Ringkasan pembelian</div>
+      <form id="checkoutForm">
+        <div class="form-row">
+          <input name="name" placeholder="Nama lengkap" required />
+          <input name="phone" placeholder="No. HP" required />
+        </div>
+        <div style="margin-top:8px">
+          <input name="address" placeholder="Alamat lengkap (kota, kecamatan, dsb)" required />
+        </div>
+        <div style="margin-top:8px" class="form-row">
+          <select name="payment" required>
+            <option value="">Pilih metode pembayaran</option>
+            <option>Transfer Bank</option>
+            <option>COD (Bayar di tempat)</option>
+            <option>OVO / GoPay</option>
+          </select>
+          <input name="promo" placeholder="Kode promo (opsional)" />
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn secondary" id="cancelCheckout">Batal</button>
+          <button type="submit" class="btn">Bayar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <small>© <span id="year"></span> Arpah • Toko Aksesories</small>
+  </footer>
+
+  <script>
+    const products = [
+      {id:'p1',name:'Kalung Mutiara Mini',price:45000,desc:'Kalung elegan untuk daily wear',stock:12,img:'https://images.unsplash.com/photo-1600185365483-26d7e4fd8c8e'},
+      {id:'p2',name:'Gelang Rantai Emas',price:75000,desc:'Rantai tipis dengan finishing mengkilap',stock:8,img:'https://images.unsplash.com/photo-1587837073080-44805c3f0e4d'},
+      {id:'p3',name:'Bros Bunga Kecil',price:25000,desc:'Bros enamel motif bunga',stock:20,img:'https://images.unsplash.com/photo-1617039267757-c8a0562a3bd4'},
+      {id:'p4',name:'Anting Bulat Pearl',price:38000,desc:'Anting minimalis warna pearl',stock:15,img:'https://images.unsplash.com/photo-1622535208995-37810d8c2125'},
+      {id:'p5',name:'Cincin Adjustable',price:30000,desc:'Cincin yang bisa diatur ukurannya',stock:10,img:'https://images.unsplash.com/photo-1600718371772-e8b3d9b7b61a'},
+      {id:'p6',name:'Tas Gantungan Kunci',price:15000,desc:'Gantungan kunci aesthetic',stock:30,img:'https://images.unsplash.com/photo-1590080875831-2a63f1dbda3b'}
+    ];
+
+    const rupiah = n => 'Rp' + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    let cart = JSON.parse(localStorage.getItem('arpah_cart')||'{}');
+
+    const grid=document.getElementById('productGrid'),
+          cartDrawer=document.getElementById('cartDrawer'),
+          cartItemsEl=document.getElementById('cartItems'),
+          subtotalEl=document.getElementById('subtotal'),
+          countBadge=document.getElementById('count'),
+          modal=document.getElementById('modal'),
+          checkoutSummary=document.getElementById('checkoutSummary'),
+          yearEl=document.getElementById('year');
+    yearEl.textContent = new Date().getFullYear();
+
+    function renderProducts(list){
+      grid.innerHTML='';
+      list.forEach(p=>{
+        const card=document.createElement('div');card.className='card';
+        card.innerHTML=`
+          <div class="img"><img src="${p.img}" alt="${p.name}"></div>
+          <div style="flex:1"><div style="display:flex;justify-content:space-between"><strong>${p.name}</strong><div class="price">${rupiah(p.price)}</div></div>
+          <div class="muted">Stock: ${p.stock}</div>
+          <div style="margin-top:8px"><small>${p.desc}</small></div></div>
+          <div style="display:flex;gap:8px;justify-content:space-between;margin-top:8px">
+            <button class="btn" data-id="${p.id}">Tambah</button>
+            <button class="btn secondary" data-id="${p.id}" data-action="quick">Lihat</button>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    function addToCart(id,qty=1){
+      const prod=products.find(x=>x.id===id);
+      if(!prod)return alert('Produk tidak ditemukan');
+      const cur=cart[id]||{...prod,qty:0};
+      if(cur.qty+qty>prod.stock)return alert('Stok tidak cukup');
+      cur.qty+=qty;cart[id]=cur;saveCart();renderCart();
+    }
+
+    function removeFromCart(id){delete cart[id];saveCart();renderCart();}
+    function changeQty(id,delta){if(!cart[id])return;cart[id].qty+=delta;if(cart[id].qty<=0)removeFromCart(id);saveCart();renderCart();}
+    function saveCart(){localStorage.setItem('arpah_cart',JSON.stringify(cart));}
+
+    function renderCart(){
+      cartItemsEl.innerHTML='';
+      const keys=Object.keys(cart);
+      if(keys.length===0){cartItemsEl.innerHTML='<div class="muted">Keranjang kosong</div>';subtotalEl.textContent='Rp0';countBadge.style.display='none';return}
+      let total=0,count=0;
+      keys.forEach(id=>{
+        const it=cart[id];total+=it.price*it.qty;count+=it.qty;
+        const row=document.createElement('div');row.className='cart-item';
+        row.innerHTML=`
+          <div class="thumb"><img src="${it.img}" alt="${it.name}"></div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between"><strong>${it.name}</strong><div>${rupiah(it.price)}</div></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+              <button class="btn secondary" data-id="${id}" data-action="dec">-</button>
+              <div>${it.qty}</div>
+              <button class="btn" data-id="${id}" data-action="inc">+</button>
+              <button class="btn secondary" style="margin-left:auto" data-id="${id}" data-action="rem">Hapus</button>
+            </div>
+          </div>`;
+        cartItemsEl.appendChild(row);
+      });
+      subtotalEl.textContent=rupiah(total);
+      countBadge.textContent=count;countBadge.style.display='inline-block';
+    }
+
+    document.addEventListener('click',e=>{
+      const btn=e.target.closest('button');if(!btn)return;
+      if(btn.dataset.id && btn.textContent.trim().toLowerCase().startsWith('tambah')){addToCart(btn.dataset.id)}
+      if(btn.id==='openCart'){cartDrawer.classList.toggle('open')}
+      if(btn.id==='closeCart'){cartDrawer.classList.remove('open')}
+      if(btn.dataset.action==='quick'){const p=products.find(x=>x.id===btn.dataset.id);alert(p.name+'\n'+p.desc+'\n'+rupiah(p.price))}
+      if(btn.dataset.action==='inc'){changeQty(btn.dataset.id,1)}
+      if(btn.dataset.action==='dec'){changeQty(btn.dataset.id,-1)}
+      if(btn.dataset.action==='rem'){removeFromCart(btn.dataset.id)}
+      if(btn.id==='checkoutBtn'){openCheckout()}
+      if(btn.id==='cancelCheckout'){closeCheckout()}
+      if(btn.id==='clearStorage'){if(confirm('Reset semua data (keranjang)?')){localStorage.removeItem('arpah_cart');cart={};renderCart();}}
+    });
+
+    document.getElementById('search').addEventListener('input',e=>{
+      const q=e.target.value.trim().toLowerCase();
+      renderProducts(products.filter(p=>p.name.toLowerCase().includes(q)||p.desc.toLowerCase().includes(q)))
+    });
+
+    function openCheckout(){
+      const keys=Object.keys(cart);if(keys.length===0)return alert('Keranjang kosong');
+      modal.classList.add('show');
+      checkoutSummary.textContent=keys.map(k=>`${cart[k].qty}× ${cart[k].name}`).join(', ')+'. '+subtotalEl.textContent;
+      document.getElementById('checkoutForm').scrollIntoView({behavior:'smooth'});
+    }
+    function closeCheckout(){modal.classList.remove('show')}
+
+    document.getElementById('checkoutForm').addEventListener('submit',e=>{
+      e.preventDefault();
+      const form=new FormData(e.target);
+      const order={name:form.get('name'),phone:form.get('phone'),address:form.get('address'),payment:form.get('payment'),promo:form.get('promo'),items:cart,total:subtotalEl.textContent,created:new Date().toISOString()};
+      console.log('ORDER',order);
+      localStorage.setItem('arpah_last_order',JSON.stringify(order));
+      alert('Terima kasih! Pesanan Anda telah diterima.\nDetail tersimpan di localStorage (arpah_last_order).');
+      cart={};saveCart();renderCart();closeCheckout();cartDrawer.classList.remove('open');
+    });
+
+    modal.addEventListener('click',e=>{if(e.target===modal)closeCheckout();});
+    renderProducts(products);renderCart();
+  </script>
+</body>
+</html>
